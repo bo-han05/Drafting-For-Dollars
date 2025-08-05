@@ -1,0 +1,309 @@
+---
+title: "SDS 375 Group Project"
+author: "Bo Han"
+date: "2025-03-04"
+output: pdf_document
+---
+
+```{r setup, include=FALSE, message=F}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+```
+
+## Draft and Position Data
+```{r, message = F, warning=F}
+drafts = read.csv("DraftData.csv", header=T)
+qbs = read.csv("Quarterbacks.csv", header=T)
+rbs = read.csv("Runningbacks.csv", header=T)
+wrs = read.csv("WideReceivers.csv", header=T)
+tes = read.csv("TightEnds.csv", header=T)
+
+drafts = drafts %>%
+  select(-College.Stats, -c(32:34)) %>%
+  mutate(Prospect_Grade = as.numeric(Prospect_Grade)) %>%
+  slice(1:702)
+rbs = rbs %>%
+  select(1:26)
+wrs = wrs %>%
+  select(1:23)
+tes = tes %>%
+  select(1:23)
+
+qbs = qbs %>%
+  mutate(Ht_digit = gsub("[^0-9-]", "", Ht),
+         ft = as.numeric(sub("-.*", "", Ht_digit)),
+         inch = as.numeric(sub("^[0-9]+-", "", Ht_digit)),
+         Ht_inch = ft * 12 + inch)
+rbs = rbs %>%
+  mutate(Ht_digit = gsub("[^0-9-]", "", Ht),
+         ft = as.numeric(sub("-.*", "", Ht_digit)),
+         inch = as.numeric(sub("^[0-9]+-", "", Ht_digit)),
+         Ht_inch = ft * 12 + inch) 
+wrs = wrs %>%
+  mutate(Ht_digit = gsub("[^0-9-]", "", Ht),
+         ft = as.numeric(sub("-.*", "", Ht_digit)),
+         inch = as.numeric(sub("^[0-9]+-", "", Ht_digit)),
+         Ht_inch = ft * 12 + inch) 
+tes = tes %>%
+  mutate(Ht_digit = gsub("[^0-9-]", "", Ht),
+         ft = as.numeric(sub("-.*", "", Ht_digit)),
+         inch = as.numeric(sub("^[0-9]+-", "", Ht_digit)),
+         Ht_inch = ft * 12 + inch) 
+```
+
+## Exploratory Data Analysis
+```{r}
+cat("There are", nrow(drafts), "subjects in the data.")
+summary(drafts)
+
+drafts %>%
+  select(c(1:3, 7, 9:28, 30)) %>%
+  summarise(across(everything(), ~ sd(., na.rm = T)))
+
+ggplot(drafts, aes(x = Age)) +
+  geom_histogram(stat = "count", fill = "steelblue", color = "black") +
+  labs(title = "Distribution of Age", x = "Age", y = "Frequency") +
+  theme_minimal()
+ggplot(drafts, aes(x = AP1)) +
+  geom_histogram(stat = "count", fill = "steelblue", color = "black") +
+  labs(title = "Distribution of All-Pro Selections", x = "All-Pro Selections", y =
+         "Frequency") +
+  theme_minimal()
+ggplot(drafts, aes(x = PB)) +
+  geom_histogram(stat = "count", fill = "steelblue", color = "black") +
+  labs(title = "Distribution of Pro Bowl Selections", x = "Pro Bowl Selections", y =
+         "Frequency") +
+  theme_minimal()
+ggplot(drafts, aes(x = St)) +
+  geom_histogram(stat = "count", fill = "steelblue", color = "black") +
+  labs(title = "Distribution of Game Starts", x = "Game Starts", y = "Frequency") +
+  theme_minimal()
+ggplot(drafts, aes(x = wAV)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "black") +
+  labs(title = "Distribution of Weighted Average Value", x = "Weighted Average Value", y = "Frequency") +
+  theme_minimal()
+ggplot(drafts, aes(x = DrAV)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "black") +
+  labs(title = "Distribution of Drafted Average Value", x = "Drafted Average Value",
+       y = "Frequency") +
+  theme_minimal()
+ggplot(drafts, aes(x = G)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "black") +
+  labs(title = "Distribution of Games Played", x = "Games Played", y = "Frequency") +
+  theme_minimal()
+ggplot(drafts, aes(x = Prospect_Grade)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "black") +
+  labs(title = "Distribution of Prospect Grades", x = "Prospect Grades", y =
+         "Frequency") +
+  theme_minimal()
+
+sort(table(drafts$Tm), decreasing = T)
+sort(table(drafts$Pos), decreasing = T)
+sort(table(drafts$College_Univ), decreasing = T)
+```
+
+## Overall and Prospect Grades Model
+```{r}
+model1 = lm(wAV ~ Prospect_Grade, data = drafts)
+QBmodel1 = lm(wAV ~ Prospect_Grade, data = qbs)
+RBmodel1 = lm(wAV ~ Prospect_Grade, data = rbs)
+WRmodel1 = lm(wAV ~ Prospect_Grade, data = wrs)
+TEmodel1 = lm(wAV ~ Prospect_Grade, data = tes)
+
+plot(wAV ~ Prospect_Grade, data = drafts, xlab = "Prospect Grade", ylab = "Weighted Average Value", main = "Overall wAV vs. Grade", pch=21, col = "black", bg =
+       "steelblue")
+abline(model1, col = "darkred")
+plot(wAV ~ Prospect_Grade, data = qbs, xlab = "Prospect Grade", ylab = "Weighted Average Value", main = "QB wAV vs. Grade", pch=21, col = "black", bg = "steelblue")
+abline(QBmodel1, col = "darkred")
+plot(wAV ~ Prospect_Grade, data = rbs, xlab = "Prospect Grade", ylab = "Weighted Average Value", main = "RB wAV vs. Grade", pch=21, col = "black", bg = "steelblue")
+abline(RBmodel1, col = "darkred")
+plot(wAV ~ Prospect_Grade, data = wrs, xlab = "Prospect Grade", ylab = "Weighted Average Value", main = "WR wAV vs. Grade", pch=21, col = "black", bg = "steelblue")
+abline(WRmodel1, col = "darkred")
+plot(wAV ~ Prospect_Grade, data = tes, xlab = "Prospect Grade", ylab = "Weighted Average Value", main = "TE wAV vs. Grade", pch=21, col = "black", bg = "steelblue")
+abline(TEmodel1, col = "darkred")
+
+coef(summary(model1))
+confint(model1)
+
+coef(summary(QBmodel1))
+confint(QBmodel1)
+coef(summary(RBmodel1))
+confint(RBmodel1)
+coef(summary(WRmodel1))
+confint(WRmodel1)
+coef(summary(TEmodel1))
+confint(TEmodel1)
+
+cor(qbs$wAV, qbs$Prospect_Grade, use = "complete.obs")
+cor(rbs$wAV, rbs$Prospect_Grade, use = "complete.obs")
+cor(wrs$wAV, wrs$Prospect_Grade, use = "complete.obs")
+cor(tes$wAV, tes$Prospect_Grade, use = "complete.obs")
+```
+
+## Diagnostics for Simple Regression Model
+```{r}
+plot(model1$resi ~ model1$fit, xlab="Fitted Values", ylab="Residuals", main =
+       "Residual Plot for Simple Regression Model", col = "red", pch = 21, bg =
+       "orange")
+
+qqnorm(model1$resi, pch=16, main="QQ Plot of Residuals for Simple Regression Model")
+qqline(model1$resi)
+
+summary(model1)$r.squared
+```
+
+## Overall and Physical Traits Model
+```{r}
+model2 = lm(wAV ~ Rnd + Pick + Age + AP1 + PB + St + DrAV + G + Prospect_Grade, data
+            = drafts)
+QBmodel2 = lm(wAV ~ Ht_inch + Wt, data = qbs)
+RBmodel2 = lm(wAV ~ Ht_inch + Wt, data = rbs)
+WRmodel2 = lm(wAV ~ Ht_inch + Wt, data = wrs)
+TEmodel2 = lm(wAV ~ Ht_inch + Wt, data = tes)
+
+coef(summary(model2))
+confint(model2)
+
+coef(summary(QBmodel2))
+confint(QBmodel2)
+coef(summary(RBmodel2))
+confint(RBmodel2)
+coef(summary(WRmodel2))
+confint(WRmodel2)
+coef(summary(TEmodel2))
+confint(TEmodel2)
+
+cor(qbs %>% dplyr::select(wAV, Ht_inch, Wt), use = "complete.obs")
+cor(rbs %>% dplyr::select(wAV, Ht_inch, Wt), use = "complete.obs")
+cor(wrs %>% dplyr::select(wAV, Ht_inch, Wt), use = "complete.obs")
+cor(tes %>% dplyr::select(wAV, Ht_inch, Wt), use = "complete.obs")
+```
+
+## NFL Combine Model
+```{r}
+QBmodel3 = lm(wAV ~ X40yd + Vertical + Broad.Jump + X3Cone + Shuttle, data = qbs)
+RBmodel3 = lm(wAV ~ X40yd + Vertical + Bench + Broad.Jump + X3Cone + Shuttle,
+              data = rbs)
+WRmodel3 = lm(wAV ~ X40yd + Vertical + Bench + Broad.Jump + X3Cone + Shuttle,
+              data = wrs)
+TEmodel3 = lm(wAV ~ X40yd + Vertical + Bench + Broad.Jump + X3Cone + Shuttle,
+              data = tes)
+
+coef(summary(QBmodel3))
+confint(QBmodel3)
+coef(summary(RBmodel3))
+confint(RBmodel3)
+coef(summary(WRmodel3))
+confint(WRmodel3)
+coef(summary(TEmodel3))
+confint(TEmodel3)
+
+cor(qbs %>% dplyr::select(wAV, X40yd, Vertical, Broad.Jump, X3Cone, Shuttle),
+    use = "complete.obs")
+cor(rbs %>% dplyr::select(wAV, X40yd, Vertical, Bench, Broad.Jump, X3Cone, Shuttle),
+    use = "complete.obs")
+cor(wrs %>% dplyr::select(wAV, X40yd, Vertical, Bench, Broad.Jump, X3Cone, Shuttle),
+    use = "complete.obs")
+cor(tes %>% dplyr::select(wAV, X40yd, Vertical, Bench, Broad.Jump, X3Cone, Shuttle),
+    use = "complete.obs")
+```
+
+## College Performance Model
+```{r}
+QBmodel4 = lm(wAV ~ G_college + Cmp. + Yds + TD. + Int. + Rate, data = qbs)
+RBmodel4 = lm(wAV ~ G_college + Y.A + Y.R + TD + Y.G, data = rbs)
+WRmodel4 = lm(wAV ~ G_college + Y.R + TD + Y.G, data = wrs)
+TEmodel4 = lm(wAV ~ G_college + Y.R + TD + Y.G, data = tes)
+
+coef(summary(QBmodel4))
+confint(QBmodel4)
+coef(summary(RBmodel4))
+confint(RBmodel4)
+coef(summary(WRmodel4))
+confint(WRmodel4)
+coef(summary(TEmodel4))
+confint(TEmodel4)
+
+cor(qbs %>% dplyr::select(wAV, G_college, Cmp., Yds, TD., Int., Rate),
+    use = "complete.obs")
+cor(rbs %>% dplyr::select(wAV, G_college, Y.A, Y.R, TD, Y.G), use = "complete.obs")
+cor(wrs %>% dplyr::select(wAV, G_college, Y.R, TD, Y.G), use = "complete.obs")
+cor(tes %>% dplyr::select(wAV, G_college, Y.R, TD, Y.G), use = "complete.obs")
+```
+
+## Diagnostics on Overall Multiple Regression Model
+```{r}
+# Summary of model
+coef(summary(model2))["Prospect_Grade", ]
+confint(model2)["Prospect_Grade", ]
+
+# Residuals against predictors
+plot(model2$resi ~ model2$model$Rnd, xlab="Draft Round", ylab="Residuals", main =
+       "Residuals vs. Draft Round", col = "red", pch = 21, bg = "orange")
+plot(model2$resi ~ model2$model$Pick, xlab="Draft Pick", ylab="Residuals", main =
+       "Residuals vs. Draft Pick", col = "red", pch = 21, bg = "orange")
+plot(model2$resi ~ model2$model$Age, xlab="Age", ylab="Residuals", main =
+       "Residuals vs. Age", col = "red", pch = 21, bg = "orange")
+plot(model2$resi ~ model2$model$AP1, xlab="All-Pro Selections", ylab="Residuals",
+     main = "Residuals vs. All-Pro Selections", col = "red", pch = 21, bg = "orange")
+plot(model2$resi ~ model2$model$PB, xlab="Pro Bowl Selections", ylab="Residuals",
+     main = "Residuals vs. Pro Bowl Selections", col = "red", pch = 21, bg =
+       "orange")
+plot(model2$resi ~ model2$model$St, xlab="Game Starts", ylab="Residuals", main =
+       "Residuals vs. Game Starts", col = "red", pch = 21, bg = "orange")
+plot(model2$resi ~ model2$model$DrAV, xlab="Drafted Average Value", ylab="Residuals",
+     main = "Residuals vs. Drafted Average Value", col = "red", pch = 21, bg =
+       "orange")
+plot(model2$resi ~ model2$model$G, xlab="Games Played", ylab="Residuals", main =
+       "Residuals vs. Games Played", col = "red", pch = 21, bg = "orange")
+plot(model2$resi ~ model2$model$Prospect_Grade, xlab="Prospect Grade",
+     ylab="Residuals", main = "Residuals vs. Prospect Grade", col = "red", pch = 21,
+     bg = "orange")
+plot(model2$resi ~ model2$fit, xlab="Fitted Values", ylab="Residuals", main =
+       "Residuals vs. Fitted Values", col = "red", pch = 21, bg = "orange")
+
+# Distribution of Residuals
+hist(model2$resi, freq=F, xlab="Residuals", main="Distribution of Residuals", col =
+       "orange")
+curve(dnorm(x, mean=0, sd=sd(model2$resi)),add=T,col="blue")
+
+# QQ Plot of Residuals
+qqnorm(model2$resi,pch=16,main="QQ Plot of Residuals for Multiple Regression Model")
+qqline(model2$resi)
+```
+
+## Predict Based on Median Overall Data
+```{r}
+plot(wAV ~ Prospect_Grade, data = drafts, xlab = "Prospect Grade", ylab = "Weighted Average Value", main = "wAV vs. Grade", pch=21, col = "black", bg = "steelblue")
+abline(model1, col = "darkred")
+
+# Medians for predictors
+var_medians = apply(drafts[, c(2:3, 7, 9:11, 13:14)], 2, median, na.rm = T)
+# Create new prospect grade values
+median_data_rows = seq(min(drafts$Prospect_Grade, na.rm =T),
+                       max(drafts$Prospect_Grade, na.rm = T), by = 0.1)
+# Create new data to predict on
+median_data = data.frame(matrix(rep(var_medians, each = length(median_data_rows)),
+                                   nrow = length(median_data_rows),
+                                   byrow = F))
+# Rename columns
+median_data = median_data %>%
+  rename(Rnd = X1,
+         Pick = X2,
+         Age = X3,
+         AP1 = X4,
+         PB = X5,
+         St = X6,
+         DrAV = X7,
+         G = X8)
+# Column with new prospect grade values
+median_data$Prospect_Grade = median_data_rows
+# Predict expected wAV
+exp_wAV = predict(model2, newdata = median_data)
+
+plot(wAV ~ Prospect_Grade, data = drafts, xlab = "Prospect Grade", ylab = "Weighted Average Value", main = "wAV vs. Grade", pch=21, col = "black", bg = "steelblue")
+abline(model1, col = "darkred")
+lines(median_data$Prospect_Grade, exp_wAV, col = "black", lwd=2)
+```
+
