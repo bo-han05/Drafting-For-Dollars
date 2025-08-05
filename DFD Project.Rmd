@@ -1,5 +1,5 @@
 ---
-title: "SDS 375 Group Project"
+title: "Drafting for Dollars Project"
 author: "Bo Han"
 date: "2025-03-04"
 output: pdf_document
@@ -306,4 +306,5 @@ plot(wAV ~ Prospect_Grade, data = drafts, xlab = "Prospect Grade", ylab = "Weigh
 abline(model1, col = "darkred")
 lines(median_data$Prospect_Grade, exp_wAV, col = "black", lwd=2)
 ```
+
 
